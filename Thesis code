@@ -1,0 +1,69 @@
+
+# Load necessary libraries
+library(readxl)
+library(survival)
+library(ggplot2)
+library(survminer)
+library(lme4)
+
+# Load the dataset
+data <- read_excel("~/Desktop/Thesis/thesis DATA/Excel for R copy w mF.xlsx")
+
+# Subset data by genotype
+w1118_data <- subset(data, Genotype == "w1118")
+Ul12.5_data <- subset(data, Genotype == "HSP70>UL12.5")
+Dead_data <- subset(data, Genotype == "UL12.5Dead")
+
+# Subset data by age
+three <- subset(data, Age == "A")
+ten <- subset(data, Age == "B")
+twenty <- subset(data, Age == "C")
+
+# Survival analysis by genotype
+
+# w1118 genotype
+w1118_fit <- survfit(Surv(time, Event) ~ Age + lb_ecoli, data = w1118_data)
+plot(w1118_fit, xlab = "Days Post Injection", ylab = "Survival (%)", ylim = c(0, 1), xlim = common_xlim)
+axis(2, at = seq(0, 1, 0.2), labels = seq(0, 100, 20), las = 1)
+axis(1, at = seq(0, 40, 10), labels = seq(0, 40, 10))
+
+# UL12.5Dead genotype
+Dead_fit <- survfit(Surv(time, Event) ~ Age + lb_ecoli, data = Dead_data)
+plot(Dead_fit, xlab = "Days Post Injection", ylab = "Survival (%)", ylim = c(0, 1), xlim = common_xlim)
+axis(2, at = seq(0, 1, 0.2), labels = seq(0, 100, 20), las = 1)
+axis(1, at = seq(0, 40, 10), labels = seq(0, 40, 10))
+
+# HSP70>UL12.5 genotype
+UL12.5_fit <- survfit(Surv(time, Event) ~ Age + lb_ecoli, data = UL12.5_data)
+plot(UL12.5_fit, xlab = "Days Post Injection", ylab = "Survival (%)", ylim = c(0, 1), xlim = common_xlim)
+axis(2, at = seq(0, 1, 0.2), labels = seq(0, 100, 20), las = 1)
+axis(1, at = seq(0, 40, 10), labels = seq(0, 40, 10))
+
+#Survival analysis by sex
+
+# Subset data by sex
+W_sex_data_lbfemale <- subset(W_sex_data_0, female_male == 0 %in% c(0, 1))
+W_sex_data_lbmale <- subset(W_sex_data_0, female_male == 1 %in% c(0, 1))
+
+# Fit survival curves by sex
+W_sex_fit_lb <- survfit(Surv(time, Event) ~ female_male, data = W_sex_data_0)
+W_sex_fit_ecoli <- survfit(Surv(time, Event) ~ female_male, data = W_sex_data_1)
+
+# Plot survival curves
+plot(W_sex_fit_lb)
+plot(W_sex_fit_ecoli)
+
+# GLMM models
+
+# Set factor levels for Age
+data$Age <- factor(data$Age, levels = c("A", "B", "C"))
+
+# Fit a generalized linear mixed model (GLMM)
+g1 <- glmer(time ~ Genotype * lb_ecoli + female_male + (1 | batch/Tube), data = data, family = poisson)
+summary(g1)
+
+
+# Fit a generalized linear model (GLM)
+model1 <- glm(time ~ Genotype * Age, family = poisson, data = data)
+summary(model1)
+
